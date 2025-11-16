@@ -4,8 +4,8 @@ class MainScreen(ttk.Frame):
     
     def __init__(self, container):
         # 1. Configura o Frame principal
-        super().__init__(container, padding="20 20 20 20")
-        self.grid(column=0, row=0, sticky=(W, E))
+        super().__init__(container, padding="100 100 200 200")
+        self.pack(fill="both", expand=True)
         
         # 2. Configura a grade para expansão (centralização)
         self.columnconfigure(0, weight=1)
@@ -20,7 +20,7 @@ class MainScreen(ttk.Frame):
     def _create_widgets(self):
         # Título da tela
         ttk.Label(self, text="Painel de Controle - EletricShop", font=('Arial', 16, 'bold')).grid(
-            column=0, row=0, columnspan=2, pady=(0, 20), sticky=CENTER
+            column=0, row=0, columnspan=2, pady=(0, 20), sticky= 'ew'
         )
 
         # --- Linha 1: Cadastro e Estoque ---
@@ -41,7 +41,7 @@ class MainScreen(ttk.Frame):
         
         # Botão: Sair do Sistema
         ttk.Button(self, text="Sair", command=self.quit).grid(
-            column=0, row=3, columnspan=2, pady=(30, 0), sticky=CENTER
+            column=0, row=3, columnspan=2, pady=(30, 0), sticky= 'ew'
         )
         
         # Adiciona um pequeno padding em todos os filhos

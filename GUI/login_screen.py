@@ -89,4 +89,5 @@ class LoginScreen(ttk.Frame):
 
     def main_screen(self):
         self.destroy()
-        MainScreen(self.master)
+        main_frame = MainScreen(self.master)
+        main_frame.pack(fill="both", expand=True)
