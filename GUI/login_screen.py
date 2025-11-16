@@ -74,7 +74,7 @@ class LoginScreen(ttk.Frame):
             
             if result:
                 self.status_var.set(f"🎉 SUCESSO! Bem-vindo(a), {result[0]}!")
-                self.after(500, self.switch_to_main_screen)
+                self.after(500, self.main_screen)
             else:
                 self.status_var.set("🛑 Usuário ou senha incorretos.")
                 
@@ -87,6 +87,6 @@ class LoginScreen(ttk.Frame):
             if conn and conn.is_connected():
                 conn.close()
 
-def switch_to_main_screen(self):
-    self.destroy()
-    MainScreen(self.master)
+    def main_screen(self):
+        self.destroy()
+        MainScreen(self.master)
