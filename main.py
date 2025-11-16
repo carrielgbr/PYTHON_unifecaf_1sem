@@ -11,5 +11,12 @@ def main():
 
     root.mainloop()
 
+class AppSession:
+    """Classe para armazenar o estado do usuário logado."""
+    def __init__(self):
+        self.user_id = None
+        self.user_type = None  # 'A' para Admin, 'U' para User
+        self.username = None
+
 if __name__ == "__main__":
     main()

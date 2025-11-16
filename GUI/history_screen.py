@@ -44,3 +44,33 @@ class HistoryScreen(ttk.Frame):
         self.destroy()
         from .main_screen import MainScreen 
         MainScreen(self.master)
+
+def buscar_historico(conn):
+    query = """
+        SELECT
+            H.data_hora,
+            H.acao,
+            H.tabela_afetada,
+            H.tela_origem,
+            -- Usa CASE para determinar se o executor é Admin ou User e pega o nome
+            CASE H.tipo_executor
+                WHEN 'A' THEN ADM.nome_admin
+                WHEN 'U' THEN USR.nome_user
+                ELSE 'N/D'
+            END AS nome_executor
+        FROM 
+            tbl_historico H
+        LEFT JOIN 
+            tbl_admin ADM ON H.id_executor = ADM.id_admin AND H.tipo_executor = 'A'
+        LEFT JOIN 
+            tbl_users USR ON H.id_executor = USR.id_users AND H.tipo_executor = 'U'
+        ORDER BY
+            H.data_hora DESC;
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute(query)
+        return cursor.fetchall()
+    except Exception as e:
+        print(f"Erro ao buscar histórico: {e}")
+        return []

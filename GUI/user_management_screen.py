@@ -1,18 +1,44 @@
 from tkinter import ttk, StringVar, W, E, constants as c
+# Importa a função de conexão com o banco
+from DB.CONECTION.conection_sql import get_connection 
+# Importa a MainScreen para o retorno
+from GUI.main_screen import MainScreen 
+
+# ----------------------------------------------------------------------
+# ATENÇÃO: É ALTAMENTE RECOMENDADO MOVER ESTA FUNÇÃO PARA UM MÓDULO 
+# CENTRAL (ex: conection_sql.py ou utils.py) para ser reutilizada em 
+# outras telas (estoque, produtos, etc.).
+# ----------------------------------------------------------------------
+def registrar_historico(conn, executor_id, executor_tipo, acao, tabela, objeto_id, tela):
+    query = """
+        INSERT INTO tbl_historico (id_executor, tipo_executor, acao, tabela_afetada, id_objeto_afetado, tela_origem)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """
+    try:
+        cursor = conn.cursor()
+        # Garante que o objeto_id seja INT (se for None, registra 0 ou NULL, dependendo do design da sua tabela)
+        obj_id = objeto_id if objeto_id is not None else 0 
+        cursor.execute(query, (executor_id, executor_tipo, acao, tabela, obj_id, tela))
+        conn.commit()
+    except Exception as e:
+        print(f"⚠️ Erro ao registrar histórico: {e}")
+# ----------------------------------------------------------------------
 
 class UserManagementScreen(ttk.Frame):
     
     def __init__(self, container):
         super().__init__(container, padding="20")
-        self.pack(fill="both", expand=True) # Exibe o frame
+        self.pack(fill="both", expand=True) 
 
-        # Configura o layout para expansão
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1) # Faz o notebook (abas) expandir
 
-        # Variáveis de controle para campos de entrada e status
+        # Variáveis de controle
         self.search_var = StringVar()
         self.status_var = StringVar()
+        # NOVAS VARS para Cadastro
+        self.new_user_name_var = StringVar()
+        self.new_user_pass_var = StringVar()
         
         self._create_widgets()
 
@@ -43,6 +69,7 @@ class UserManagementScreen(ttk.Frame):
             column=0, row=2, pady=(15, 0), sticky=c.W
         )
 
+    # ... (método _setup_search_tab permanece inalterado) ...
     def _setup_search_tab(self):
         # Campo de Pesquisa
         ttk.Label(self.tab_search, text="Nome ou ID do Usuário:").grid(column=0, row=0, sticky=c.W, pady=5)
@@ -50,7 +77,6 @@ class UserManagementScreen(ttk.Frame):
         ttk.Button(self.tab_search, text="Pesquisar", command=self._search_user).grid(column=2, row=0, padx=10)
         
         # Tabela de Resultados (Treeview)
-        # Treeview simula a listagem de usuários
         tree = ttk.Treeview(self.tab_search, columns=("id", "nome", "status"), show="headings")
         tree.heading("id", text="ID")
         tree.heading("nome", text="Nome do Usuário")
@@ -67,32 +93,84 @@ class UserManagementScreen(ttk.Frame):
         # Configurações de expansão para a aba de pesquisa
         self.tab_search.columnconfigure(1, weight=1)
         self.tab_search.rowconfigure(1, weight=1) # Faz a Treeview expandir
-
+    
+    
     def _setup_register_tab(self):
         # Campos de Cadastro (placeholders)
         ttk.Label(self.tab_register, text="Nome:").grid(column=0, row=0, sticky=c.W, pady=5)
-        ttk.Entry(self.tab_register, width=30).grid(column=1, row=0, sticky=c.E)
+        # Associa a variável de controle new_user_name_var
+        ttk.Entry(self.tab_register, width=30, textvariable=self.new_user_name_var).grid(column=1, row=0, sticky=c.E)
         
         ttk.Label(self.tab_register, text="Senha:").grid(column=0, row=1, sticky=c.W, pady=5)
-        ttk.Entry(self.tab_register, width=30, show="*").grid(column=1, row=1, sticky=c.E)
+        # Associa a variável de controle new_user_pass_var
+        ttk.Entry(self.tab_register, width=30, show="*", textvariable=self.new_user_pass_var).grid(column=1, row=1, sticky=c.E)
 
         ttk.Button(self.tab_register, text="Salvar Novo Usuário", command=self._register_user).grid(
             column=1, row=2, pady=10, sticky=c.E
         )
 
-    # --- Métodos de Lógica ---
+    # --- Métodos de Lógica (Atualizados) ---
     
     def _search_user(self):
         # Lógica de consulta ao banco de dados para a Treeview
         print(f"Pesquisando usuário: {self.search_var.get()}")
 
     def _register_user(self):
-        # Lógica de inserção no banco de dados
-        print("Cadastrando novo usuário...")
+        """Lógica de inserção no banco de dados e registro de histórico."""
+        
+        conn = get_connection()
+        if conn is None: return
+
+        # Pega os inputs
+        nome_novo = self.new_user_name_var.get()
+        pass_novo = self.new_user_pass_var.get()
+        
+        if not nome_novo or not pass_novo:
+            print("🚨 Nome e Senha são obrigatórios.")
+            return
+
+        try:
+            # Garante que a sessão existe e que o usuário está logado
+            if not hasattr(self.master, 'session') or self.master.session.user_id is None:
+                 raise Exception("Erro de Sessão: Administrador não identificado.")
+            
+            executor_id = self.master.session.user_id 
+            executor_tipo = self.master.session.user_type
+            
+            # --- 1. Cadastrar na tbl_users ---
+            cursor = conn.cursor()
+            
+            # id_admin é o ID do executor logado que está cadastrando o novo user
+            query_user = "INSERT INTO tbl_users (nome_user, pass_user, id_admin) VALUES (%s, %s, %s)"
+            cursor.execute(query_user, (nome_novo, pass_novo, executor_id))
+            
+            novo_user_id = cursor.lastrowid # Pega o ID do usuário recém-criado
+            
+            # --- 2. Registrar no Histórico ---
+            registrar_historico(
+                conn,
+                executor_id,
+                executor_tipo,
+                f'CADASTRO NOVO USER: {nome_novo}', # Ação detalhada
+                'tbl_users',
+                novo_user_id,
+                'UserManagementScreen'
+            )
+            
+            print(f"✅ Usuário '{nome_novo}' cadastrado com sucesso por {self.master.session.username}.")
+            
+            # Limpa os campos após o sucesso
+            self.new_user_name_var.set("")
+            self.new_user_pass_var.set("")
+            
+        except Exception as e:
+            print(f"❌ Erro ao cadastrar/registrar histórico: {e}")
+            conn.rollback() 
+        finally:
+            if conn and conn.is_connected():
+                conn.close()
 
     def _go_back_to_main(self):
         # Transição de tela
         self.destroy()
-        # Importa a MainScreen localmente para evitar problemas de dependência circular
-        from .main_screen import MainScreen 
         MainScreen(self.master)

@@ -58,6 +58,7 @@ class LoginScreen(ttk.Frame):
         pass_input = self.password_var.get()
         
         conn = get_connection() # Chama a função de conexão do módulo DB
+        cursor = conn.cursor()
         
         if conn is None:
             self.status_var.set("❌ Falha na conexão com o DB.")
@@ -86,6 +87,25 @@ class LoginScreen(ttk.Frame):
             # Fechamento da conexão sempre no final do uso
             if conn and conn.is_connected():
                 conn.close()
+
+            # Query AGORA pega o ID do admin (id_admin)
+            query = "SELECT id_admin, nome_admin FROM tbl_admin WHERE nome_admin = %s AND pass_admin = %s"
+            
+            cursor.execute(query, (user_input, pass_input)) 
+            result = cursor.fetchone() 
+            
+            if result:
+                admin_id = result[0]
+                admin_nome = result[1]
+                
+                self.status_var.set(f"🎉 SUCESSO! Bem-vindo(a), {admin_nome}!")
+                
+                # NOVO: Salva os dados na sessão antes de trocar de tela
+                self.master.session.user_id = admin_id
+                self.master.session.user_type = 'A'
+                self.master.session.username = admin_nome
+
+                self.after(500, self.main_screen)
 
     def main_screen(self):
         self.destroy()
