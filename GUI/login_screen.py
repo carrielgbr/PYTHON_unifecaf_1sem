@@ -1,11 +1,14 @@
 from tkinter import ttk, StringVar, W, E
 from DB.CONECTION.conection_sql import get_connection # Importa a função do novo módulo
 
+from GUI.main_screen import MainScreen
+
+
 class LoginScreen(ttk.Frame):
     
     # O 'container' é a janela root do Tkinter
     def __init__(self, container):
-        super().__init__(container, padding="30 30 30 30")
+        super().__init__(container, padding="100 100 200 200")
         
         # Configuração inicial do frame na janela
         self.grid(column=0, row=0, sticky=(W, E))
@@ -28,7 +31,7 @@ class LoginScreen(ttk.Frame):
 
     def _create_widgets(self):
         # Título
-        ttk.Label(self, text="Login do Administrador", font=('Arial', 14, 'bold')).grid(column=0, row=0, columnspan=2, pady=10)
+        ttk.Label(self, text="Login sistema", font=('Arial', 14, 'bold')).grid(column=0, row=0, columnspan=2, pady=10)
 
         # Campo Usuário
         ttk.Label(self, text="Usuário:").grid(column=0, row=1, sticky=W)
@@ -71,6 +74,7 @@ class LoginScreen(ttk.Frame):
             
             if result:
                 self.status_var.set(f"🎉 SUCESSO! Bem-vindo(a), {result[0]}!")
+                self.after(500, self.switch_to_main_screen)
             else:
                 self.status_var.set("🛑 Usuário ou senha incorretos.")
                 
@@ -82,3 +86,7 @@ class LoginScreen(ttk.Frame):
             # Fechamento da conexão sempre no final do uso
             if conn and conn.is_connected():
                 conn.close()
+
+def switch_to_main_screen(self):
+    self.destroy()
+    MainScreen(self.master)

@@ -13,3 +13,9 @@ INSERT INTO tbl_admin (nome_admin,pass_admin) VALUES ('admin','admin');
 SET @ID_USER_ADMIN = LAST_INSERT_ID();
 
 SELECT * FROM tbl_admin;
+
+CREATE TABLE tbl_users(
+	id_users INT PRIMARY KEY AUTO_INCREMENT,
+    nome_user VARCHAR (100),
+    pass_user VARCHAR (100)    
+);
