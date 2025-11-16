@@ -16,7 +16,6 @@ Este projeto foi construído utilizando as seguintes tecnologias:
     ```bash
     pip install mysql-connector-python
     ```
-    (Se você tiver outras bibliotecas, liste-as aqui.)
 
 2.  **Configure o Banco de Dados:**
     * Crie o banco de dados `eletric_shop` no seu servidor MySQL.
