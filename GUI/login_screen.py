@@ -59,7 +59,7 @@ class LoginScreen(ttk.Frame):
         
         conn = get_connection() # Chama a função de conexão do módulo DB
         cursor = conn.cursor()
-        
+
         if conn is None:
             self.status_var.set("❌ Falha na conexão com o DB.")
             return
@@ -75,7 +75,7 @@ class LoginScreen(ttk.Frame):
             
             if result:
                 self.status_var.set(f"🎉 SUCESSO! Bem-vindo(a), {result[0]}!")
-                self.after(500, self.main_screen)
+                self.after(500, self._switch_to_main_screen)
             else:
                 self.status_var.set("🛑 Usuário ou senha incorretos.")
                 
@@ -107,7 +107,7 @@ class LoginScreen(ttk.Frame):
 
                 self.after(500, self.main_screen)
 
-    def main_screen(self):
+    def _switch_to_main_screen(self):
         self.destroy()
         main_frame = MainScreen(self.master)
         main_frame.pack(fill="both", expand=True)

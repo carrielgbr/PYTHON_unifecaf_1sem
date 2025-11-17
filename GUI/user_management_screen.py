@@ -1,8 +1,8 @@
 from tkinter import ttk, StringVar, W, E, constants as c
 # Importa a função de conexão com o banco
-from DB.CONECTION.conection_sql import get_connection 
+from DB.CONECTION.conection_sql import get_connection
+from DB.ERROR.utils import registrar_historico
 # Importa a MainScreen para o retorno
-from GUI.main_screen import MainScreen 
 
 # ----------------------------------------------------------------------
 # ATENÇÃO: É ALTAMENTE RECOMENDADO MOVER ESTA FUNÇÃO PARA UM MÓDULO 
@@ -173,4 +173,5 @@ class UserManagementScreen(ttk.Frame):
     def _go_back_to_main(self):
         # Transição de tela
         self.destroy()
+        from .main_screen import MainScreen
         MainScreen(self.master)
