@@ -77,14 +77,15 @@ class UserManagementScreen(ttk.Frame):
         ttk.Button(self.tab_search, text="Pesquisar", command=self._search_user).grid(column=2, row=0, padx=10)
         
         # Tabela de Resultados (Treeview)
-        tree = ttk.Treeview(self.tab_search, columns=("id", "nome", "status"), show="headings")
-        tree.heading("id", text="ID")
-        tree.heading("nome", text="Nome do Usuário")
-        tree.heading("status", text="Status")
-        tree.column("id", width=50)
-        tree.column("nome", width=200)
-        tree.column("status", width=100)
-        tree.grid(column=0, row=1, columnspan=3, pady=10, sticky="NSEW")
+        #tree = ttk.Treeview(self.tab_search, columns=("id", "nome", "status"), show="headings")
+        self.tree = ttk.Treeview(self.tab_search, columns=("id", "nome", "status"), show="headings")
+        self.tree.heading("id", text="ID")
+        self.tree.heading("nome", text="Nome do Usuário")
+        self.tree.heading("status", text="Status")
+        self.tree.column("id", width=50)
+        self.tree.column("nome", width=200)
+        self.tree.column("status", width=100)
+        self.tree.grid(column=0, row=1, columnspan=3, pady=10, sticky="NSEW")
         
         # Botões de Ação na Tabela (Ativar/Desativar/Excluir)
         ttk.Button(self.tab_search, text="Ativar/Desativar").grid(column=0, row=2, sticky=c.W)
@@ -93,7 +94,8 @@ class UserManagementScreen(ttk.Frame):
         # Configurações de expansão para a aba de pesquisa
         self.tab_search.columnconfigure(1, weight=1)
         self.tab_search.rowconfigure(1, weight=1) # Faz a Treeview expandir
-    
+
+        self.tree.grid(column=0, row=1, columnspan=3, pady=10, sticky="NSEW")
     
     def _setup_register_tab(self):
         # Campos de Cadastro (placeholders)
@@ -112,8 +114,66 @@ class UserManagementScreen(ttk.Frame):
     # --- Métodos de Lógica (Atualizados) ---
     
     def _search_user(self):
-        # Lógica de consulta ao banco de dados para a Treeview
-        print(f"Pesquisando usuário: {self.search_var.get()}")
+                # Lógica de consulta ao banco de dados para a Treeview
+              #  print(f"Pesquisando usuário: {self.search_var.get()}")
+
+            conn = get_connection()
+            if conn is None:
+                print("Erro: Não foi possível estabelecer conexão com o MySQL.")
+                return
+
+                search_term = self.search_var.get()
+
+            # 1. Limpar resultados anteriores da Treeview
+            for item in self.tree.get_children():
+                self.tree.delete(item)
+
+            try:
+                cursor = conn.cursor()
+
+                # O termo de busca é usado como wildcard (procura por qualquer parte do nome)
+                search_pattern = f"%{search_term}%"
+
+                # Consulta SQL para buscar usuários
+                # Status (Tipo) é determinado pelo campo id_admin estar preenchido ou não, 
+                # mas aqui vamos usar uma consulta simples por nome e ID
+                query = """
+                SELECT 
+                    u.id_users, 
+                    u.nome_user,
+                    CASE 
+                        WHEN u.id_admin IS NOT NULL THEN 'Cadastrado por Admin'
+                        ELSE 'Usuário Padrão'
+                    END AS status_user
+                FROM 
+                    tbl_users u
+                WHERE 
+                    u.nome_user LIKE %s OR CAST(u.id_users AS CHAR) LIKE %s
+                ORDER BY 
+                    u.nome_user;
+                """
+
+                cursor.execute(query, (search_pattern, search_pattern))
+                results = cursor.fetchall()
+
+                if not results:
+                    self.tree.insert('', 'end', values=('', 'Nenhum usuário encontrado.', ''))
+
+                else:
+                    # 2. Inserir os novos resultados na Treeview
+                    for id_user, nome, status in results:
+                        self.tree.insert('', 'end', values=(id_user, nome, status))
+
+            except Exception as e:
+                print(f"❌ Erro ao executar pesquisa: {e}")
+                self.tree.insert('', 'end', values=('', f'Erro de consulta: {e}', ''))
+
+            finally:
+                if conn and conn.is_connected():
+                    conn.close()
+
+
+
 
     def _register_user(self):
         """Lógica de inserção no banco de dados e registro de histórico."""
